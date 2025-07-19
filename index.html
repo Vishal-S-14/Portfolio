@@ -1,0 +1,1606 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vishal S Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/svg" href="images/Vishal_Logo.ico">
+    <style>
+        :root {
+            --primary-color: #FFD700; /* Gold */
+            --text-color-light: #F5F5F5; /* Light grey for general text */
+            --transition-speed: 0.6s;
+            --cubic-bezier: cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            overscroll-behavior: contain;
+            scroll-padding-top: 80px; /* Offset for fixed header */
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color-light);
+            overflow-x: hidden;
+            will-change: scroll-position;
+        }
+
+        #background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: black;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+            padding: 18px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 1.8em;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        .header nav a {
+            margin-left: 25px;
+            color: var(--text-color-light);
+            text-decoration: none;
+            transition: color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            font-weight: 500;
+            position: relative;
+            padding-bottom: 5px;
+        }
+
+        .header nav a::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .header nav a:hover,
+        .header nav a:focus {
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            outline: none;
+        }
+
+        .header nav a:hover::after,
+        .header nav a:focus::after {
+            width: 100%;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 5%;
+            padding-top: 100px;
+            color: var(--text-color-light);
+            -webkit-overflow-scrolling: touch;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        section {
+            margin-bottom: 100px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity var(--transition-speed) var(--cubic-bezier), transform var(--transition-speed) var(--cubic-bezier);
+            padding: 40px;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            width: 100%;
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            font-size: 3em;
+            margin-bottom: 50px;
+            font-weight: 800;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+            position: relative;
+            display: inline-block;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        #home {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 80px);
+            text-align: center;
+            padding: 40px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            opacity: 1;
+            transform: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            margin-bottom: 0;
+        }
+
+        #home h2 {
+            font-size: 4em;
+            margin: 0 0 25px 0;
+            text-align: left;
+            width: 100%;
+            white-space: normal;
+        }
+
+        #home h2::after {
+            display: none;
+        }
+
+        #home p {
+            font-size: 2em;
+            color: var(--text-color-light);
+            font-weight: 400;
+            margin: 0;
+            line-height: 1.4;
+            text-align: left;
+            width: 100%;
+            white-space: normal;
+        }
+
+        .bold-text {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .typing-text {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            min-height: 1.5em;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            background-color: var(--primary-color);
+            margin-left: 3px;
+            width: 4px;
+            height: 1.1em;
+            animation: blink 0.8s infinite step-end;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        #projects {
+            background: none;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 35px;
+            justify-items: center;
+            width: 100%;
+        }
+
+        .project-box {
+            padding: 0;
+            opacity: 0;
+            transform: translateY(80px) scale(0.95);
+            transition: transform var(--transition-speed) var(--cubic-bezier),
+                        opacity var(--transition-speed) var(--cubic-bezier),
+                        box-shadow var(--transition-speed) var(--cubic-bezier),
+                        background var(--transition-speed) var(--cubic-bezier),
+                        border-color var(--transition-speed) var(--cubic-bezier),
+                        backdrop-filter var(--transition-speed) var(--cubic-bezier);
+            width: 100%;
+            max-width: 450px;
+            min-height: 480px;
+            border-radius: 15px;
+            cursor: pointer;
+            will-change: transform, opacity, box-shadow, background, border-color, backdrop-filter;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            position: relative;
+            text-align: left;
+            outline: none;
+            background: none;
+            border: 2px solid transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-box::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: transparent;
+            z-index: 0;
+            border-radius: 15px;
+            box-shadow: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .project-box:hover::before,
+        .project-box:focus-within::before {
+            opacity: 1;
+            transform: scale(1.01);
+        }
+
+        .project-box:nth-child(1) { transition-delay: 0.1s; }
+        .project-box:nth-child(2) { transition-delay: 0.2s; }
+        .project-box:nth-child(3) { transition-delay: 0.3s; }
+
+        .project-box.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .project-box:hover,
+        .project-box:focus-within {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
+            background: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .project-box:focus {
+            outline: 3px solid var(--primary-color);
+            outline-offset: 4px;
+        }
+
+        .project-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+            align-items: stretch;
+            padding: 0;
+        }
+
+        .project-box img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            loading: lazy;
+            position: relative;
+            z-index: 1;
+            opacity: 1;
+            transform: scale(1);
+            transition: transform 0.4s ease;
+        }
+
+        .project-box.live-come img {
+            transform: scale(1.1);
+        }
+
+        .project-content {
+            padding: 25px;
+            flex-grow: 1;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            min-height: 250px; /* Increased to accommodate link and enforce line clamp */
+            padding-bottom: 20px; /* Consistent bottom padding */
+            align-items: flex-start; /* Align content to the start */
+            overflow: hidden; /* Ensure content beyond three lines is hidden */
+        }
+
+        .project-box.live-come .project-content {
+            opacity: 1;
+            transform: translateY(-5px);
+        }
+
+        .project-content h3 {
+            font-size: 2em;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            color: var(--primary-color);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        .project-content p {
+            font-size: 1.1em;
+            font-weight: 400;
+            color: var(--text-color-light);
+            margin: 0 0 15px 0;
+            line-height: 1.5;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            flex-grow: 1;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            max-height: calc(1.5em * 3); /* Explicitly limit to 3 lines based on line-height */
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .tech-badge {
+            background: rgba(255, 215, 0, 0.3);
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .project-content a {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1em;
+            padding-bottom: 3px;
+            transition: color 0.3s ease, transform 0.2s ease;
+            position: relative;
+            margin-top: 15px; /* Space above the link */
+        }
+
+        .project-content a::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .project-content a:hover::after,
+        .project-content a:focus::after {
+            width: 100%;
+        }
+
+        .project-content a:hover,
+        .project-content a:focus {
+            color: #E6C200;
+            transform: translateX(5px);
+            outline: none;
+        }
+
+        .project-content a i {
+            font-size: 1.1em;
+            transition: transform 0.3s ease;
+        }
+
+        .project-content a:hover i,
+        .project-content a:focus i {
+            transform: translateX(3px);
+        }
+
+        #skills {
+            background: none;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .skills-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 40px;
+            justify-items: center;
+            align-items: center;
+            padding: 30px 0;
+        }
+
+        .skill {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 160px;
+            opacity: 0;
+            transform: translateY(60px) scale(0.9);
+            transition: opacity var(--transition-speed) var(--cubic-bezier), transform var(--transition-speed) var(--cubic-bezier);
+            background: none;
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: none;
+            transition-delay: var(--delay);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .skill:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: none;
+        }
+
+        .skill.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .skill:nth-child(1) { --delay: 0.1s; }
+        .skill:nth-child(2) { --delay: 0.2s; }
+        .skill:nth-child(3) { --delay: 0.3s; }
+        .skill:nth-child(4) { --delay: 0.4s; }
+        .skill:nth-child(5) { --delay: 0.5s; }
+        .skill:nth-child(6) { --delay: 0.6s; }
+
+        .circular-progress {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .circular-progress svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .circular-progress .bg-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 12;
+        }
+
+        .circular-progress .progress-circle {
+            fill: none;
+            stroke: var(--primary-color);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 0 251.2;
+            transition: stroke-dasharray 1.8s ease-out;
+        }
+
+        .skill.visible .progress-circle {
+            animation: none;
+        }
+
+        .circular-progress img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: contain;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .skill:hover .circular-progress img {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .skill-label {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-color-light);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            margin-top: 5px;
+            white-space: nowrap;
+        }
+
+        #resume {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            min-height: 250px;
+            background: none;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        #resume h2,
+        #resume .resume-button {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity var(--transition-speed) var(--cubic-bezier), transform var(--transition-speed) var(--cubic-bezier);
+        }
+
+        #resume h2.visible,
+        #resume .resume-button.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #resume h2 {
+            transition-delay: 0.1s;
+        }
+
+        #resume .resume-button {
+            transition-delay: 0.2s;
+        }
+
+        .resume-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 30px;
+            background: var(--primary-color);
+            color: var(--text-color-dark);
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1.1em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            touch-action: manipulation;
+        }
+
+        .resume-button:hover,
+        .resume-button:focus {
+            background: #E6C200;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            outline: none;
+        }
+
+        .resume-button i {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .resume-button:hover i {
+            transform: translateX(5px);
+        }
+
+        #about {
+            background: none;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        #about p {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity var(--transition-speed) var(--cubic-bezier), transform var(--transition-speed) var(--cubic-bezier);
+            transition-delay: 0.2s;
+            font-size: 1.15em;
+            line-height: 1.8;
+            color: var(--text-color-light);
+            margin-bottom: 40px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+
+        #about p.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 60px;
+            justify-items: center;
+            margin-top: 50px;
+        }
+
+        .contact-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity var(--transition-speed) var(--cubic-bezier), transform var(--transition-speed) var(--cubic-bezier);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .contact-item:nth-child(1) { transition-delay: 0.3s; }
+        .contact-item:nth-child(2) { transition-delay: 0.4s; }
+        .contact-item:nth-child(3) { transition-delay: 0.5s; }
+        .contact-item:nth-child(4) { transition-delay: 0.6s; }
+
+        .contact-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .contact-item a {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-color-light);
+            font-weight: 500;
+            font-size: 1.05em;
+            transition: color 0.3s ease;
+        }
+
+        .contact-item img {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
+            opacity: 0.9;
+            filter: brightness(0) invert(1) grayscale(0.2);
+            loading: lazy;
+            object-fit: contain;
+            box-sizing: content-box;
+        }
+
+        .contact-item .smaller-logo {
+            width: 40px;
+            height: 40px;
+        }
+
+        .contact-item .whatsapp-logo {
+            width: 36px;
+            height: 36px;
+        }
+
+        .contact-item a:hover img,
+        .contact-item a:focus img {
+            transform: scale(1.25) rotate(7deg);
+            opacity: 1;
+            filter: brightness(0) invert(1) sepia(1) hue-rotate(50deg) saturate(7);
+        }
+
+        .contact-item a:hover,
+        .contact-item a:focus {
+            color: var(--primary-color);
+            outline: none;
+        }
+
+        @media (max-width: 1024px) {
+            .header { padding: 15px 4%; }
+            .header h1 { font-size: 1.6em; }
+            .header nav a { margin-left: 20px; font-size: 0.95em; }
+            #home h2 { font-size: 3.5em; }
+            #home p { font-size: 1.8em; }
+            h2 { font-size: 2.5em; }
+            .projects-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+            .project-box { max-width: 550px; min-height: 600px; }
+            .project-box img { height: 280px; }
+            .project-content { padding: 20px; min-height: 250px; padding-bottom: 15px; }
+            .project-content h3 { font-size: 1.8em; }
+            .project-content p { font-size: 1em; }
+            .tech-badge { font-size: 0.85em; padding: 5px 10px; }
+            .project-content a { font-size: 0.95em; margin-top: 12px; }
+            .skills-container { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 30px; }
+            .skill { max-width: 140px; }
+            .circular-progress { width: 110px; height: 110px; }
+            .circular-progress .bg-circle, .circular-progress .progress-circle { stroke-width: 10; }
+            .circular-progress img { width: 60px; height: 60px; }
+            .contact-grid { gap: 50px; }
+            .contact-item img { width: 42px; height: 42px; }
+            .contact-item .smaller-logo { width: 36px; height: 36px; }
+            .contact-item .whatsapp-logo { width: 32px; height: 32px; }
+        }
+
+        @media (max-width: 768px) {
+            .content { padding: 0 4%; padding-top: 70px; }
+            .header { padding: 12px 3%; }
+            .header h1 { font-size: 1.4em; }
+            .header nav a { margin-left: 15px; font-size: 0.85em; }
+            #home { min-height: 80vh; padding: 30px; }
+            #home h2 { font-size: 2.8em; margin-bottom: 20px; }
+            #home p { font-size: 1.5em; }
+            h2 { font-size: 2.2em; margin-bottom: 40px; }
+            section { padding: 30px 20px; margin-bottom: 80px; }
+            .projects-grid { grid-template-columns: 1fr; gap: 25px; }
+            .project-box { min-height: 550px; max-width: 90%; margin: 0 auto; }
+            .project-box img { height: 250px; }
+            .project-content { padding: 15px; min-height: 250px; padding-bottom: 15px; }
+            .project-content h3 { font-size: 1.6em; }
+            .project-content p { font-size: 0.95em; }
+            .tech-badge { font-size: 0.8em; padding: 4px 8px; }
+            .project-content a { font-size: 0.9em; margin-top: 10px; }
+            .skills-container { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 25px; }
+            .skill { max-width: 120px; padding: 15px; }
+            .circular-progress { width: 90px; height: 90px; }
+            .circular-progress .bg-circle, .circular-progress .progress-circle { stroke-width: 8; }
+            .circular-progress img { width: 50px; height: 50px; }
+            .resume-button { padding: 12px 25px; font-size: 1em; }
+            #about p { font-size: 1em; margin-bottom: 30px; }
+            .contact-grid { grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 40px; }
+            .contact-item img { width: 36px; height: 36px; }
+            .contact-item .smaller-logo { width: 30px; height: 30px; }
+            .contact-item .whatsapp-logo { width: 26px; height: 26px; }
+            .contact-item a { font-size: 0.9em; }
+        }
+
+        @media (max-width: 480px) {
+            .header { padding: 10px 2%; }
+            .header h1 { font-size: 1.2em; }
+            .header nav a { margin-left: 10px; font-size: 0.75em; }
+            #home h2 { font-size: 2.2em; }
+            #home p { font-size: 1.2em; }
+            h2 { font-size: 1.8em; margin-bottom: 30px; }
+            section { padding: 25px 15px; margin-bottom: 60px; }
+            .project-box { min-height: 500px; }
+            .project-box img { height: 220px; }
+            .project-content { padding: 12px; min-height: 250px; padding-bottom: 12px; }
+            .project-content h3 { font-size: 1.5em; margin-bottom: 10px; }
+            .project-content p { font-size: 0.9em; }
+            .tech-badge { font-size: 0.75em; padding: 3px 7px; }
+            .project-content a { font-size: 0.85em; margin-top: 8px; }
+            .skills-container { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+            .skill { max-width: 100%; padding: 10px; }
+            .circular-progress { width: 80px; height: 80px; }
+            .circular-progress .bg-circle, .circular-progress .progress-circle { stroke-width: 7; }
+            .circular-progress img { width: 45px; height: 45px; }
+            .skill-label { font-size: 0.85em; }
+            .resume-button { padding: 10px 20px; font-size: 0.9em; }
+            #about p { font-size: 0.95em; }
+            .contact-grid { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+            .contact-item img { width: 32px; height: 32px; }
+            .contact-item .smaller-logo { width: 28px; height: 28px; }
+            .contact-item .whatsapp-logo { width: 24px; height: 24px; }
+            .contact-item a { font-size: 0.85em; }
+        }
+
+        @media (min-resolution: 2dppx) {
+            .project-box img, .skill img, .contact-item img {
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: crisp-edges;
+            }
+        }
+
+        @media (hover: none) {
+            .project-box:hover,
+            .project-box:hover img,
+            .tech-badge:hover,
+            .project-content a:hover,
+            .project-content a:hover::after,
+            .project-content a:hover i,
+            .skill:hover,
+            .skill:hover .circular-progress img,
+            .resume-button:hover,
+            .resume-button:hover i,
+            .contact-item a:hover img,
+            .contact-item a:hover,
+            .header nav a:hover,
+            .header nav a:hover::after,
+            .header nav a:hover,
+            .project-box.live-come,
+            .project-box.live-come img,
+            .project-box.live-come .project-content,
+            .project-box:hover::before,
+            .project-box:focus-within::before {
+                transform: none !important;
+                box-shadow: none !important;
+                background: none !important;
+                filter: none !important;
+                color: var(--text-color-light) !important;
+                border-color: rgba(255, 255, 255, 0.15) !important;
+                opacity: 1 !important;
+            }
+            .header nav a,
+            .project-content a {
+                padding-bottom: 0;
+            }
+            .header nav a::after,
+            .project-content a::after {
+                display: none;
+            }
+        }
+
+        .project-box:focus,
+        .resume-button:focus,
+        .contact-item a:focus,
+        .project-content a:focus {
+            outline: 3px solid var(--primary-color);
+            outline-offset: 4px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background"></canvas>
+    <div class="header">
+        <h1>Vishal S</h1>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#projects">Projects</a>
+            <a href="#skills">Skills</a>
+            <a href="#resume">Resume</a>
+            <a href="#about">About</a>
+        </nav>
+    </div>
+    <div class="content">
+        <section id="home">
+            <h2 class="typing-text" id="nameText">
+                <span class="text-content"></span><span class="typing-cursor"></span>
+            </h2>
+            <p class="typing-text" id="roleText">
+                <span class="text-content"></span><span class="typing-cursor"></span>
+            </p>
+        </section>
+
+        <section id="projects">
+            <h2>Projects</h2>
+            <div class="projects-grid">
+                <div class="project-box" tabindex="0">
+                    <div class="project-content-wrapper">
+                        <img src="images/Project 1.png" alt="Cryptography Website">
+                        <div class="project-content">
+                            <h3>Cryptography Website</h3>
+                            <p>A secure web tool for encryption and decryption using Knapsack, Diffie-Hellman, and Rabin cryptosystems. This project provides a user-friendly interface to explore advanced cryptographic techniques, ensuring data security through robust algorithms.</p>
+                            <div class="tech-stack">
+                                <span class="tech-badge">Python</span>
+                                <span class="tech-badge">HTML/CSS</span>
+                                <span class="tech-badge">JavaScript</span>
+                            </div>
+                            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="View Cryptography Website Project">View Project <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-box" tabindex="0">
+                    <div class="project-content-wrapper">
+                        <img src="images/Project 3.png" alt="Course Objective Tracker">
+                        <div class="project-content">
+                            <h3>Course Objective Tracker</h3>
+                            <p>A student marks management system with secure authentication and detailed performance tracking. This system allows educators to monitor student progress effectively while maintaining data privacy.</p>
+                            <div class="tech-stack">
+                                <span class="tech-badge">C++</span>
+                                <span class="tech-badge">Python</span>
+                            </div>
+                            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="View Course Objective Tracker Project">View Project <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-box" tabindex="0">
+                    <div class="project-content-wrapper">
+                        <img src="images/Project 2.png" alt="Smart Bike Sharing System">
+                        <div class="project-content">
+                            <h3>Smart Bike Sharing System</h3>
+                            <p>An IoT-integrated bike-sharing system with real-time tracking and smart lock functionality. This solution enhances urban mobility by providing a sustainable and efficient transportation option.</p>
+                            <div class="tech-stack">
+                                <span class="tech-badge">Kotlin</span>
+                                <span class="tech-badge">Flutter</span>
+                                <span class="tech-badge">Firebase</span>
+                                <span class="tech-badge">Arduino</span>
+                            </div>
+                            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="View Smart Bike Sharing System Project">View Project <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills">
+            <h2>Skills</h2>
+            <div class="skills-container">
+                <div class="skill">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40"></circle>
+                            <circle class="progress-circle" cx="50" cy="50" r="40" data-percentage="85"></circle>
+                        </svg>
+                        <img src="images/C Pgm.jpeg" alt="C" loading="lazy">
+                    </div>
+                    <div class="skill-content">
+                        <div class="skill-label" data-percentage="85">C: 0%</div>
+                    </div>
+                </div>
+                <div class="skill">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40"></circle>
+                            <circle class="progress-circle" cx="50" cy="50" r="40" data-percentage="80"></circle>
+                        </svg>
+                        <img src="images/cpp pgm.png" alt="C++" loading="lazy">
+                    </div>
+                    <div class="skill-content">
+                        <div class="skill-label" data-percentage="80">C++: 0%</div>
+                    </div>
+                </div>
+                <div class="skill">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40"></circle>
+                            <circle class="progress-circle" cx="50" cy="50" r="40" data-percentage="75"></circle>
+                        </svg>
+                        <img src="images/python.png" alt="Python" loading="lazy">
+                    </div>
+                    <div class="skill-content">
+                        <div class="skill-label" data-percentage="75">Python: 0%</div>
+                    </div>
+                </div>
+                <div class="skill">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40"></circle>
+                            <circle class="progress-circle" cx="50" cy="50" r="40" data-percentage="90"></circle>
+                        </svg>
+                        <img src="images/html.svg" alt="HTML" loading="lazy">
+                    </div>
+                    <div class="skill-content">
+                        <div class="skill-label" data-percentage="90">HTML: 0%</div>
+                    </div>
+                </div>
+                <div class="skill">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40"></circle>
+                            <circle class="progress-circle" cx="50" cy="50" r="40" data-percentage="85"></circle>
+                        </svg>
+                        <img src="images/css.svg" alt="CSS" loading="lazy">
+                    </div>
+                    <div class="skill-content">
+                        <div class="skill-label" data-percentage="85">CSS: 0%</div>
+                    </div>
+                </div>
+                <div class="skill">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40"></circle>
+                            <circle class="progress-circle" cx="50" cy="50" r="40" data-percentage="70"></circle>
+                        </svg>
+                        <img src="images/js.svg" alt="JavaScript" loading="lazy">
+                    </div>
+                    <div class="skill-content">
+                        <div class="skill-label" data-percentage="70">JavaScript: 0%</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="resume">
+            <h2>Resume</h2>
+            <a href="Docs/Vishal S Resume.pdf" class="resume-button" aria-label="Download Vishal's Resume" download>
+                <i class="fas fa-download"></i> Download My Resume
+            </a>
+        </section>
+
+        <section id="about">
+            <h2>About</h2>
+            <p>Hi, I'm Vishal S— a passionate and driven developer currently pursuing my B.Tech in Computer Science and Engineering with a specialization in Cybersecurity (CYS) at Amrita Vishwa Vidyapeetham, Coimbatore. I'm in my 4th year and have cultivated strong technical skills in web development, along with a keen interest in cybersecurity and emerging technologies.</p>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <a href="mailto:vishalyeskay@gmail.com" aria-label="Email Vishal">
+                        <img src="images/gmail.png" alt="Email Icon" loading="lazy" class="smaller-logo">
+                        <span>Email</span>
+                    </a>
+                </div>
+                <div class="contact-item">
+                    <a href="https://wa.me/+918300171699" target="_blank" rel="noopener noreferrer" aria-label="Message Vishal on WhatsApp">
+                        <img src="images/whatsapp.png" alt="WhatsApp Icon" loading="lazy" class="whatsapp-logo">
+                        <span>WhatsApp</span>
+                    </a>
+                </div>
+                <div class="contact-item">
+                    <a href="https://www.linkedin.com/in/vishal-s-486580255/" target="_blank" rel="noopener noreferrer" aria-label="Visit Vishal's LinkedIn Profile">
+                        <img src="images/linkedin.png" alt="LinkedIn Icon" loading="lazy" class="smaller-logo">
+                        <span>LinkedIn</span>
+                    </a>
+                </div>
+                <div class="contact-item">
+                    <a href="https://github.com/Vishal-S-14" target="_blank" rel="noopener noreferrer" aria-label="Visit Vishal's GitHub Profile">
+                        <img src="images/github.png" alt="GitHub Icon" loading="lazy">
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script type="text/javascript">
+        // --- START Provided gk_isXlsx Script ---
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+        // --- END Provided gk_isXlsx Script ---
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Typing animation variables
+            const nameText = "Hi, I'm Vishal S";
+            const roleTexts = [
+                { normal: "I'm Pursuing ", bold: "4th year B.Tech CSE(CYS)" },
+                { normal: "I'm a ", bold: "Full Stack Developer" }
+            ];
+            
+            let isAnimating = false;
+            let currentRoleIndex = 0;
+            let typingTimeout = null;
+            const nameElement = document.getElementById('nameText').querySelector('.text-content');
+            const roleElement = document.getElementById('roleText').querySelector('.text-content');
+
+            if (!nameElement || !roleElement) {
+                console.error("Error: '.text-content' elements not found for typing animation. Displaying static text.");
+                if (document.getElementById('nameText')) {
+                    document.getElementById('nameText').innerHTML = "Hi, I'm Vishal S";
+                }
+                if (document.getElementById('roleText')) {
+                    document.getElementById('roleText').innerHTML = "I'm Pursuing <span class='bold-text'>4th year B.Tech CSE(CYS)</span>";
+                }
+                isAnimating = true;
+            }
+
+            function typeText(element, text, callback) {
+                let index = 0;
+                element.innerHTML = '';
+                const cursor = element.parentElement.querySelector('.typing-cursor');
+                if (cursor) cursor.style.display = 'inline-block';
+
+                function typeChar() {
+                    if (index < text.length && isAnimating) {
+                        element.textContent = text.substring(0, index + 1);
+                        index++;
+                        typingTimeout = setTimeout(typeChar, 70);
+                    } else if (callback) {
+                        callback();
+                    }
+                }
+                typeChar();
+            }
+
+            function typeRoleText(element, normalText, boldText, callback) {
+                let index = 0;
+                element.innerHTML = '';
+                const cursor = element.parentElement.querySelector('.typing-cursor');
+                if (cursor) cursor.style.display = 'inline-block';
+
+                function typeChar() {
+                    if (!isAnimating) return;
+                    if (index < normalText.length) {
+                        element.textContent = normalText.substring(0, index + 1);
+                        index++;
+                        typingTimeout = setTimeout(typeChar, 70);
+                    } else if (index < normalText.length + boldText.length) {
+                        const boldIndex = index - normalText.length;
+                        element.innerHTML = normalText + '<span class="bold-text">' + boldText.substring(0, boldIndex + 1) + '</span>';
+                        index++;
+                        typingTimeout = setTimeout(typeChar, 70);
+                    } else if (callback) {
+                        callback();
+                    }
+                }
+                typeChar();
+            }
+
+            function rotateRoleText() {
+                if (!isAnimating) return;
+                const currentText = roleTexts[currentRoleIndex];
+                typeRoleText(roleElement, currentText.normal, currentText.bold, () => {
+                    const cursor = roleElement.parentElement.querySelector('.typing-cursor');
+                    if (cursor) cursor.style.display = 'inline-block';
+                    typingTimeout = setTimeout(() => {
+                        if (!isAnimating) return;
+                        roleElement.innerHTML = '';
+                        if (cursor) cursor.style.display = 'none';
+                        currentRoleIndex = (currentRoleIndex + 1) % roleTexts.length;
+                        typingTimeout = setTimeout(rotateRoleText, 100);
+                    }, 3000);
+                });
+            }
+
+            function startTypingAnimation() {
+                if (isAnimating) return;
+                isAnimating = true;
+                
+                const nameCursor = document.querySelector('#nameText .typing-cursor');
+                const roleCursor = document.querySelector('#roleText .typing-cursor');
+
+                if (nameCursor) nameCursor.style.display = 'inline-block';
+                if (roleCursor) roleCursor.style.display = 'none';
+
+                typeText(nameElement, nameText, () => {
+                    const nameCursorAfter = nameElement.parentElement.querySelector('.typing-cursor');
+                    if (nameCursorAfter) nameCursorAfter.style.display = 'none';
+                    if (!isAnimating) return;
+                    typingTimeout = setTimeout(() => {
+                        if (!isAnimating) return;
+                        rotateRoleText();
+                    }, 500);
+                });
+            }
+
+            function resetTypingAnimation() {
+                isAnimating = false;
+                if (typingTimeout) {
+                    clearTimeout(typingTimeout);
+                    typingTimeout = null;
+                }
+                currentRoleIndex = 0;
+                if (nameElement) nameElement.innerHTML = '';
+                if (roleElement) roleElement.innerHTML = '';
+
+                const nameCursor = document.querySelector('#nameText .typing-cursor');
+                const roleCursor = document.querySelector('#roleText .typing-cursor');
+                if (nameCursor) nameCursor.style.display = 'none';
+                if (roleCursor) roleCursor.style.display = 'none';
+            }
+
+            // Particle animation code
+            const canvas = document.getElementById('background');
+            const ctx = canvas.getContext('2d', { alpha: false });
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let animationFrameId;
+
+            class Particle {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.vx = (Math.random() - 0.5) * 3;
+                    this.vy = (Math.random() - 0.5) * 3;
+                    this.radius = 2;
+                    this.color = '#FFFFFF';
+                }
+
+                update() {
+                    this.vx *= 0.995; // Reduced friction for sustained movement
+                    this.vy *= 0.995; // Reduced friction for sustained movement
+                    // Ensure minimum velocity to prevent stopping
+                    const minVelocity = 0.1;
+                    if (Math.abs(this.vx) < minVelocity) {
+                        this.vx = this.vx >= 0 ? minVelocity : -minVelocity;
+                    }
+                    if (Math.abs(this.vy) < minVelocity) {
+                        this.vy = this.vy >= 0 ? minVelocity : -minVelocity;
+                    }
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < this.radius || this.x > canvas.width - this.radius) {
+                        this.vx *= -1;
+                    }
+                    if (this.y < this.radius || this.y > canvas.height - this.radius) {
+                        this.vy *= -1;
+                    }
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                }
+            }
+
+            const particles = [];
+            const numParticles = 60;
+            const connectionDistance = 120;
+            const mouseInfluenceDistance = 150;
+            const attractionStrength = 0.05;
+            const clickPoints = [];
+            const clickLifetime = 90;
+
+            function initializeParticles() {
+                particles.length = 0;
+                for (let i = 0; i < numParticles; i++) {
+                    particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+                }
+            }
+
+            initializeParticles();
+
+            const mouse = { x: null, y: null };
+
+            function animate(timestamp) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Apply mouse attraction to particles
+                if (mouse.x !== null && mouse.y !== null) {
+                    particles.forEach(particle => {
+                        const dx = mouse.x - particle.x;
+                        const dy = mouse.y - particle.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < mouseInfluenceDistance) {
+                            const force = attractionStrength * (1 - distance / mouseInfluenceDistance);
+                            particle.vx += (dx / distance) * force;
+                            particle.vy += (dy / distance) * force;
+                        }
+                    });
+                }
+
+                // Update and draw particles
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                });
+
+                // Draw connections between particles
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < particles.length; i++) {
+                    const p1 = particles[i];
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+                        const dx = p1.x - p2.x;
+                        const dy = p1.y - p2.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < connectionDistance) {
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // Draw click animation lines
+                clickPoints.forEach((clickPoint, index) => {
+                    if (clickPoint.lifetime > 0) {
+                        const opacity = clickPoint.lifetime / clickLifetime;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`; // Changed to white
+                        ctx.lineWidth = 0.5; // Match regular particle lines
+                        clickPoint.particles.forEach(particle => {
+                            ctx.beginPath();
+                            ctx.moveTo(clickPoint.x, clickPoint.y);
+                            ctx.lineTo(particle.x, particle.y);
+                            ctx.stroke();
+                        });
+                        clickPoint.lifetime -= 1;
+                    } else {
+                        const tempParticleIndex = particles.indexOf(clickPoint.tempParticle);
+                        if (tempParticleIndex > -1) {
+                            particles.splice(tempParticleIndex, 1);
+                        }
+                        clickPoints.splice(index, 1);
+                    }
+                });
+
+                animationFrameId = requestAnimationFrame(animate);
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                cancelAnimationFrame(animationFrameId);
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initializeParticles();
+                animationFrameId = requestAnimationFrame(animate);
+            }, { passive: true });
+
+            // Mouse movement handling
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            }, { passive: true });
+
+            window.addEventListener('mouseout', () => {
+                mouse.x = null;
+                mouse.y = null;
+            }, { passive: true });
+
+            // Click event for temporary particle and lines
+            canvas.addEventListener('click', (e) => {
+                const tempParticle = new Particle(e.clientX, e.clientY);
+                particles.push(tempParticle);
+                clickPoints.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    particles: [tempParticle],
+                    lifetime: clickLifetime
+                });
+            }, { passive: true });
+
+            // Intersection Observer for sections
+            const sections = document.querySelectorAll('section:not(#home), .project-box, .skill, #resume h2, #resume .resume-button, #about p, .contact-item');
+            const homeSection = document.getElementById('home');
+            
+            const homeObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        resetTypingAnimation();
+                        setTimeout(startTypingAnimation, 200);
+                    } else {
+                        resetTypingAnimation();
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            homeObserver.observe(homeSection);
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        if (entry.target.classList.contains('skill')) {
+                            const progressCircle = entry.target.querySelector('.progress-circle');
+                            const skillLabel = entry.target.querySelector('.skill-label');
+                            if (progressCircle) {
+                                const radius = parseFloat(progressCircle.getAttribute('r'));
+                                const circumference = 2 * Math.PI * radius;
+                                const percentage = parseFloat(progressCircle.getAttribute('data-percentage'));
+                                const progress = (percentage / 100) * circumference;
+
+                                progressCircle.style.strokeDasharray = `0 ${circumference}`;
+                                requestAnimationFrame(() => {
+                                    progressCircle.style.strokeDasharray = `${progress} ${circumference}`;
+                                });
+                                animateStatistics(skillLabel, percentage);
+                            }
+                        }
+                    } else {
+                        if (entry.target.classList.contains('project-box') ||
+                            entry.target.classList.contains('skill') ||
+                            entry.target.classList.contains('resume-button') ||
+                            entry.target.tagName === 'P' ||
+                            (entry.target.tagName === 'H2' && entry.target.parentElement.id === 'resume') ||
+                            entry.target.classList.contains('contact-item')) {
+                            entry.target.classList.remove('visible');
+                            if (entry.target.classList.contains('skill')) {
+                                const progressCircle = entry.target.querySelector('.progress-circle');
+                                const skillLabel = entry.target.querySelector('.skill-label');
+                                if (progressCircle) {
+                                    const radius = parseFloat(progressCircle.getAttribute('r'));
+                                    const circumference = 2 * Math.PI * radius;
+                                    progressCircle.style.strokeDasharray = `0 ${circumference}`;
+                                }
+                                if (skillLabel) {
+                                    const skillName = skillLabel.textContent.split(':')[0];
+                                    skillLabel.textContent = `${skillName}: 0%`;
+                                }
+                            }
+                        }
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('.header nav a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection) {
+                        const headerOffset = document.querySelector('.header').offsetHeight;
+                        const elementPosition = targetSection.getBoundingClientRect().top + window.pageYOffset;
+                        const offsetPosition = elementPosition - headerOffset - 20;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+
+                        if (window.location.protocol !== 'file:' && document.location.origin !== 'null') {
+                            try {
+                                history.pushState(null, null, targetId);
+                            } catch (error) {
+                                console.warn('Unable to update URL with history.pushState:', error.message);
+                            }
+                        }
+                    }
+                }, { passive: true });
+            });
+
+            // Handle popstate for back/forward navigation
+            window.addEventListener('popstate', (e) => {
+                const targetId = window.location.hash;
+                if (targetId) {
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection) {
+                        const headerOffset = document.querySelector('.header').offsetHeight;
+                        const elementPosition = targetSection.getBoundingClientRect().top + window.pageYOffset;
+                        const offsetPosition = elementPosition - headerOffset - 20;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                } else {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            }, { passive: true });
+
+            // Live-come effect for project boxes
+            const projectBoxes = document.querySelectorAll('.project-box');
+            projectBoxes.forEach(box => {
+                box.addEventListener('mouseenter', () => {
+                    box.classList.add('live-come');
+                });
+
+                box.addEventListener('mouseleave', () => {
+                    box.classList.remove('live-come');
+                });
+            });
+
+            // Initial typing animation
+            setTimeout(() => {
+                if (nameElement && roleElement) {
+                    startTypingAnimation();
+                }
+            }, 100);
+
+            function animateStatistics(element, targetPercentage) {
+                let start = 0;
+                const duration = 1200;
+                const startTime = performance.now();
+                const initialText = element.textContent.split(':')[0];
+
+                function update() {
+                    const currentTime = performance.now();
+                    const progress = Math.min((currentTime - startTime) / duration, 1);
+                    const currentValue = Math.floor(start + (targetPercentage - start) * progress);
+                    element.textContent = `${initialText}: ${currentValue}%`;
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        element.textContent = `${initialText}: ${targetPercentage}%`;
+                    }
+                }
+                requestAnimationFrame(update);
+            }
+        });
+    </script>
+</body>
+</html>
